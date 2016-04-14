@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Open Networking Laboratory
+ * Copyright 2014-2015 Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,21 @@
 package org.bootcamp.magic;
 
 /**
- * Entity that defines possible init state of the cordvtn node.
+ * Entity capable of handling a subject connected and disconnected situation.
  */
-public interface OvsNodeState {
+public interface ConnectionHandler<T> {
+
     /**
-     * Returns null for no state.
+     * Processes the connected subject.
      *
-     * @return null
+     * @param subject subject
      */
-    static OvsNodeState noState() {
-        return null;
-    }
+    void connected(T subject);
+
+    /**
+     * Processes the disconnected subject.
+     *
+     * @param subject subject.
+     */
+    void disconnected(T subject);
 }

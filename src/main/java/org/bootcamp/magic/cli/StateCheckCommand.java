@@ -26,7 +26,7 @@ import org.bootcamp.magic.OvsNode;
  * Check OVS node status.
  */
 @Command(scope = "onos", name = "magic-node-check",description = "Shows detailed node init state")
-public class CordVtnNodeCheckCommand extends AbstractShellCommand {
+public class StateCheckCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "hostname", description = "Hostname",
             required = true, multiValued = false)
@@ -46,6 +46,6 @@ public class CordVtnNodeCheckCommand extends AbstractShellCommand {
             return;
         }
 
-        print(nodeManager.checkNodeInitState(node));
+//        print(nodeManager.checkNodeInitState(node));
     }
 }
