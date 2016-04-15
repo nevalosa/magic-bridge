@@ -16,7 +16,7 @@
 package org.bootcamp.magic;
 
 /**
- * Entity capable of handling a subject connected and disconnected situation.
+ * Connection Handler Interface.
  */
 public interface ConnectionHandler<T> {
 
