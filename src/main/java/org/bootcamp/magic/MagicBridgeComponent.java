@@ -38,6 +38,7 @@ import org.onosproject.net.behaviour.BridgeDescription;
 import org.onosproject.net.behaviour.BridgeName;
 import org.onosproject.net.behaviour.ControllerInfo;
 import org.onosproject.net.device.DeviceAdminService;
+import org.onosproject.net.device.DeviceListener;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.driver.DriverHandler;
 import org.onosproject.net.driver.DriverService;
@@ -107,9 +108,12 @@ public class MagicBridgeComponent {
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected DeviceAdminService adminService;
     
+    private DeviceListener listener;
+    
     @Activate
     protected void activate() {
         log.info("Started");
+        deviceService.addListener(listener);
     }
 
     @Deactivate
@@ -162,15 +166,6 @@ public class MagicBridgeComponent {
         }
     }
     
-    /**
-     * Returns port name.
-     *
-     * @param port port
-     * @return port name
-     */
-    private String getPortName(Port port) {
-        return port.annotations().value("portName");
-    }
 
     /**
      * Returns connection state of OVSDB server for a given node.
