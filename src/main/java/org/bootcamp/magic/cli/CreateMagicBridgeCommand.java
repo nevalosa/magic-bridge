@@ -17,9 +17,9 @@ public class CreateMagicBridgeCommand extends AbstractShellCommand {
     @Override
     protected void execute() {
     	MagicBridgeComponent nodeManager = AbstractShellCommand.get(MagicBridgeComponent.class);
-        
+ 	    log.info("Here we go: create-magic-bridge");
         nodeManager.createMagicBridge();
-
+        log.info("Here we go: create-magic-bridge DONE!!!");
 //        print(nodeManager.checkNodeInitState(node));
     }
 }

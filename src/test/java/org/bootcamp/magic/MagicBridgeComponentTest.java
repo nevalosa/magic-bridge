@@ -30,7 +30,6 @@ public class MagicBridgeComponentTest {
     public void setUp() {
         component = new MagicBridgeComponent();
         component.activate();
-
     }
 
     @After

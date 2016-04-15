@@ -17,16 +17,16 @@
 
     <command-bundle xmlns="http://karaf.apache.org/xmlns/shell/v1.1.0">
         <command>
-            <action class="org.onosproject.cordvtn.cli.CreateMagicBridgeCommand"/>
+            <action class="org.bootcamp.magic.cli.CreateMagicBridgeCommand"/>
         </command>
         <command>
-            <action class="org.onosproject.cordvtn.cli.InstallDefaultFlowCommand"/>
+            <action class="org.bootcamp.magic.cli.InstallDefaultFlowCommand"/>
         </command>
         <command>
-            <action class="org.onosproject.cordvtn.cli.ListOvsNodeCommand"/>
+            <action class="org.bootcamp.magic.cli.ListOvsNodeCommand"/>
         </command>
         <command>
-            <action class="org.onosproject.cordvtn.cli.StateCheckCommand"/>
+            <action class="org.bootcamp.magic.cli.StateCheckCommand"/>
         </command>
     </command-bundle>
 </blueprint>

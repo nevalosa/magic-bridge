@@ -15,10 +15,9 @@
  */
 package org.bootcamp.magic;
 
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
-import static org.onlab.util.Tools.groupedThreads;
-
-import java.util.concurrent.ExecutorService;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
@@ -27,19 +26,26 @@ import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.ItemNotFoundException;
+import org.onosproject.cluster.ClusterService;
+import org.onosproject.cluster.NodeId;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.net.Device;
 import org.onosproject.net.Device.Type;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Port;
+import org.onosproject.net.behaviour.BridgeConfig;
+import org.onosproject.net.behaviour.BridgeDescription;
+import org.onosproject.net.behaviour.BridgeName;
+import org.onosproject.net.behaviour.ControllerInfo;
 import org.onosproject.net.device.DeviceAdminService;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.driver.DriverHandler;
 import org.onosproject.net.driver.DriverService;
 import org.onosproject.net.flow.FlowRuleService;
-import org.onosproject.store.service.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Sets;
 
 import jline.internal.Log;
 
@@ -52,10 +58,20 @@ public class MagicBridgeComponent {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     
+    /***
+     * DPID Prefix.
+     */
+    private static final int DPID_BEGIN = 3;
+    
+    /**
+     * OF port.
+     */
+    private static final int OFPORT = 6653;
+    
     /**
      * APP Name.
      */
-    public static final String APP_ID = "org.bootcamp.magic";
+    public static final String APP_ID = "org.foo.app";
     
     /**
      * Bridge Name.
@@ -69,23 +85,21 @@ public class MagicBridgeComponent {
     protected DeviceService deviceService;
     
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected StorageService storageService;
-    
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected FlowRuleService flowRuleService;
     
-    private final OvsdbHandler ovsdbHandler = new OvsdbHandler();
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected ClusterService clusterService;
     
-    private final BridgeHandler bridgeHandler = new BridgeHandler();
-
-    private final ExecutorService eventExecutor =
-            newSingleThreadScheduledExecutor(groupedThreads("onos/cordvtncfg", "event-handler"));
-    
-    //
     private OvsRuleInstaller ruleInstaller;
-    
-    //
+    /**
+     * Application Id.
+     */
     private ApplicationId appId;
+    
+    /**
+     * Local node id.
+     */
+    private NodeId localNodeId;
     
     /**
      * CLI admin service.
@@ -96,7 +110,6 @@ public class MagicBridgeComponent {
     @Activate
     protected void activate() {
         log.info("Started");
-        ruleInstaller = new OvsRuleInstaller(appId, flowRuleService,deviceService,driverService,MAGIC_BRIDGE);
     }
 
     @Deactivate
@@ -113,23 +126,41 @@ public class MagicBridgeComponent {
      * @param node virtual switch node
      */
     public void createMagicBridge() {
-
+    	Log.info("Create MAGIC Bridge.");
+    	
         try {
-        	Iterable<Device> devices = deviceService.getAvailableDevices(Type.SWITCH);
+        	Iterable<Device> devices = deviceService.getAvailableDevices(Type.CONTROLLER);
+        	
         	for(Device device : devices){
+        		
         		DeviceId id = device.id();
+        		String dpid = id.toString().substring(DPID_BEGIN);
         		DriverHandler handler = driverService.createHandler(id);
-        		Log.info("Device:{}, Type:{}, ID:{}, Handler:{}", device.manufacturer(), device.type(),id.toString(), handler==null);
-//                BridgeConfig bridgeConfig =  handler.behaviour(BridgeConfig.class);
-//                bridgeConfig.addBridge(BridgeName.bridgeName(MAGIC_BRIDGE), dpid, controllers);
+                BridgeConfig bridgeConfig =  handler.behaviour(BridgeConfig.class);
+                Collection<BridgeDescription> bridges = bridgeConfig.getBridges();
+                
+                long count = bridges.stream()
+                	     .filter( bd -> bd.bridgeName().name().equals(MAGIC_BRIDGE))
+                	     .count();
+                
+                if(count > 1){
+                	log.info("MAGIC brige is alredy exist.");
+                }
+                
+                List<ControllerInfo> controllers = new ArrayList<>();
+                Sets.newHashSet(clusterService.getNodes()).stream()
+                        .forEach(controller -> {
+                            ControllerInfo ctrlInfo = new ControllerInfo(controller.ip(), OFPORT, "tcp");
+                            controllers.add(ctrlInfo);
+                        });
+                controllers.forEach(action -> log.info("Controller info:{}", action.toString()));
+                bridgeConfig.addBridge(BridgeName.bridgeName(MAGIC_BRIDGE), dpid, controllers);
+                log.info("MAGIC brige is created.");
         	}
-           
         } catch (ItemNotFoundException e) {
             log.warn("Create magic bridge failed.");
         }
     }
-
-    
     
     /**
      * Returns port name.
