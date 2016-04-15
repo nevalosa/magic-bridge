@@ -1,30 +1,19 @@
 package org.bootcamp.magic.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.bootcamp.magic.MagicBridgeComponent;
-import org.bootcamp.magic.OvsNode;
+import org.apache.karaf.shell.commands.Command;
 import org.onosproject.cli.AbstractShellCommand;
 
+
+/**
+ * Install Default Flow Command.
+ */
+@Command(scope = "onos", name = "install-default-flow",description = "Install default flow.")
 public class InstallDefaultFlowCommand extends AbstractShellCommand {
 
-    @Argument(index = 0, name = "hostname", description = "Hostname",
-            required = true, multiValued = false)
-    private String hostname = null;
-
-    @Override
+   @Override
     protected void execute() {
-    	MagicBridgeComponent nodeManager = AbstractShellCommand.get(MagicBridgeComponent.class);
-        OvsNode node = nodeManager.getNodes()
-                .stream()
-                .filter(n -> n.hostname().equals(hostname))
-                .findFirst()
-                .orElse(null);
+	   
+	   log.info("Here we go: Install Default Flow: install-default-flow.");
 
-        if (node == null) {
-            print("Cannot find %s from registered nodes", hostname);
-            return;
-        }
-
-//        print(nodeManager.checkNodeInitState(node));
     }
 }

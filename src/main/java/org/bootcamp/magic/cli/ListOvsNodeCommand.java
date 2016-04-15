@@ -16,26 +16,24 @@
 
 package org.bootcamp.magic.cli;
 
-import org.apache.karaf.shell.commands.Argument;
 import org.apache.karaf.shell.commands.Command;
-import org.onosproject.cli.AbstractShellCommand;
 import org.bootcamp.magic.MagicBridgeComponent;
+import org.onosproject.cli.AbstractShellCommand;
 
 /**
- * Check OVS node status.
+ * Lists all nodes registered to the service.
  */
-@Command(scope = "onos", name = "magic-node-check",description = "Shows detailed node init state")
-public class StateCheckCommand extends AbstractShellCommand {
-
-    @Argument(index = 0, name = "hostname", description = "Hostname",
-            required = true, multiValued = false)
-    private String hostname = null;
+@Command(scope = "onos", name = "ovs-nodes",
+        description = "Lists all nodes registered magic service")
+public class ListOvsNodeCommand extends AbstractShellCommand {
 
     @Override
     protected void execute() {
-    	log.info("Here we go: magic-node-check {}", hostname);
-//    	MagicBridgeComponent nodeManager = AbstractShellCommand.get(MagicBridgeComponent.class);
-
-//        print(nodeManager.checkNodeInitState(node));
+    	if(true){
+    		log.info("Here we go: ovs-nodes to list ovs nodes.");
+    		return;
+    	}
+    	
+    	MagicBridgeComponent nodeManager = AbstractShellCommand.get(MagicBridgeComponent.class);
     }
 }
