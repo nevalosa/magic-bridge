@@ -82,10 +82,10 @@ public class OvsRuleInstaller {
      * @param dpIntf data plane interface name
      * @param dpIp data plane ip address
      */
-//    public void init(DeviceId deviceId, String dpIntf, IpAddress dpIp) {
-//    	
-//        defaultFlowRule(true);
-//    }
+    public void init(DeviceId deviceId, String dpIntf, IpAddress dpIp) {
+    	
+        defaultFlowRule(true);
+    }
     
     /**
      * Installs or uninstall a default rule.

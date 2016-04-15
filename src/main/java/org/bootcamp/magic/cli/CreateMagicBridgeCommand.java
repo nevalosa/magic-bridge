@@ -11,14 +11,14 @@ import org.onosproject.cli.AbstractShellCommand;
 @Command(scope = "onos", name = "create-magic-bridge",description = "Create Magic Bridge")
 public class CreateMagicBridgeCommand extends AbstractShellCommand {
 
-    @Argument(index = 0, name = "hostname", description = "Hostname",required = true, multiValued = false)
-    private String hostname = null;
+    @Argument(index = 0, name = "br", description = "bridge name",required = true, multiValued = false)
+    private String br = null;
 
     @Override
     protected void execute() {
     	MagicBridgeComponent nodeManager = AbstractShellCommand.get(MagicBridgeComponent.class);
  	    log.info("Here we go: create-magic-bridge");
-        nodeManager.createMagicBridge();
+        nodeManager.createMagicBridge(br);
         log.info("Here we go: create-magic-bridge DONE!!!");
 //        print(nodeManager.checkNodeInitState(node));
     }

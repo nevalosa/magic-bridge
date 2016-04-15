@@ -37,6 +37,7 @@
     </properties>
 
     <dependencies>
+
         <dependency>
             <groupId>org.onosproject</groupId>
             <artifactId>onos-api</artifactId>

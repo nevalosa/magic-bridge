@@ -43,6 +43,8 @@ import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.driver.DriverHandler;
 import org.onosproject.net.driver.DriverService;
 import org.onosproject.net.flow.FlowRuleService;
+import org.onosproject.net.flowobjective.FlowObjectiveService;
+import org.onosproject.net.packet.PacketService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +93,15 @@ public class MagicBridgeComponent {
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected ClusterService clusterService;
     
-    private OvsRuleInstaller ruleInstaller;
+//    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+//    protected FlowObjectiveService flowObjectiveService;
+    
+//    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+//    protected PacketService packetService;
+    
+    //Installer.
+    private FlowRuleInstaller ruleInstaller;
+    
     /**
      * Application Id.
      */
@@ -108,12 +118,11 @@ public class MagicBridgeComponent {
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected DeviceAdminService adminService;
     
-    private DeviceListener listener;
-    
     @Activate
     protected void activate() {
         log.info("Started");
-        deviceService.addListener(listener);
+        ruleInstaller = new FlowRuleInstaller(deviceService, flowRuleService);
+        deviceService.addListener(ruleInstaller);
     }
 
     @Deactivate
@@ -129,8 +138,12 @@ public class MagicBridgeComponent {
      *
      * @param node virtual switch node
      */
-    public void createMagicBridge() {
+    public void createMagicBridge(String ovs) {
     	Log.info("Create MAGIC Bridge.");
+    	
+    	if(ovs == null || ovs.isEmpty()){
+    		ovs = MAGIC_BRIDGE;
+    	}
     	
         try {
         	Iterable<Device> devices = deviceService.getAvailableDevices(Type.CONTROLLER);
@@ -143,13 +156,15 @@ public class MagicBridgeComponent {
                 BridgeConfig bridgeConfig =  handler.behaviour(BridgeConfig.class);
                 Collection<BridgeDescription> bridges = bridgeConfig.getBridges();
                 
+                final String name = ovs;
                 long count = bridges.stream()
-                	     .filter( bd -> bd.bridgeName().name().equals(MAGIC_BRIDGE))
+                	     .filter( bd -> bd.bridgeName().name().equals(name))
                 	     .count();
                 
                 if(count > 1){
                 	log.info("MAGIC brige is alredy exist.");
                 }
+                
                 
                 List<ControllerInfo> controllers = new ArrayList<>();
                 Sets.newHashSet(clusterService.getNodes()).stream()
@@ -158,7 +173,7 @@ public class MagicBridgeComponent {
                             controllers.add(ctrlInfo);
                         });
                 controllers.forEach(action -> log.info("Controller info:{}", action.toString()));
-                bridgeConfig.addBridge(BridgeName.bridgeName(MAGIC_BRIDGE), dpid, controllers);
+                bridgeConfig.addBridge(BridgeName.bridgeName(ovs), dpid, controllers);
                 log.info("MAGIC brige is created.");
         	}
         } catch (ItemNotFoundException e) {
