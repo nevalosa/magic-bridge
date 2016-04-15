@@ -27,30 +27,25 @@ import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.ItemNotFoundException;
 import org.onosproject.cluster.ClusterService;
-import org.onosproject.cluster.NodeId;
 import org.onosproject.core.ApplicationId;
+import org.onosproject.core.CoreService;
 import org.onosproject.net.Device;
 import org.onosproject.net.Device.Type;
 import org.onosproject.net.DeviceId;
-import org.onosproject.net.Port;
 import org.onosproject.net.behaviour.BridgeConfig;
 import org.onosproject.net.behaviour.BridgeDescription;
 import org.onosproject.net.behaviour.BridgeName;
 import org.onosproject.net.behaviour.ControllerInfo;
 import org.onosproject.net.device.DeviceAdminService;
-import org.onosproject.net.device.DeviceListener;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.driver.DriverHandler;
 import org.onosproject.net.driver.DriverService;
 import org.onosproject.net.flow.FlowRuleService;
 import org.onosproject.net.flowobjective.FlowObjectiveService;
-import org.onosproject.net.packet.PacketService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
-
-import jline.internal.Log;
 
 /**
  * A Magic Component works for OVS...
@@ -59,204 +54,129 @@ import jline.internal.Log;
 @Service(value = MagicBridgeComponent.class)
 public class MagicBridgeComponent {
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
-    
-    /***
-     * DPID Prefix.
-     */
-    private static final int DPID_BEGIN = 3;
-    
-    /**
-     * OF port.
-     */
-    private static final int OFPORT = 6653;
-    
-    /**
-     * APP Name.
-     */
-    public static final String APP_ID = "org.foo.app";
-    
-    /**
-     * Bridge Name.
-     * */
-    public static final String MAGIC_BRIDGE = "magic";
-    
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected DriverService driverService;
-    
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected DeviceService deviceService;
-    
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected FlowRuleService flowRuleService;
-    
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected ClusterService clusterService;
-    
-//    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-//    protected FlowObjectiveService flowObjectiveService;
-    
-//    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-//    protected PacketService packetService;
-    
-    //Installer.
-    private FlowRuleInstaller ruleInstaller;
-    
-    /**
-     * Application Id.
-     */
-    private ApplicationId appId;
-    
-    /**
-     * Local node id.
-     */
-    private NodeId localNodeId;
-    
-    /**
-     * CLI admin service.
-     */
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected DeviceAdminService adminService;
-    
-    @Activate
-    protected void activate() {
-        log.info("Started");
-        ruleInstaller = new FlowRuleInstaller(deviceService, flowRuleService);
-        deviceService.addListener(ruleInstaller);
-    }
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Deactivate
-    protected void deactivate() {
-        log.info("Stopped");
-    }
-    
-    
-    
-    
-    /**
-     * Creates an magic bridge for a given node.
-     *
-     * @param node virtual switch node
-     */
-    public void createMagicBridge(String ovs) {
-    	Log.info("Create MAGIC Bridge.");
-    	
-    	if(ovs == null || ovs.isEmpty()){
-    		ovs = MAGIC_BRIDGE;
-    	}
-    	
-        try {
-        	Iterable<Device> devices = deviceService.getAvailableDevices(Type.CONTROLLER);
-        	
-        	for(Device device : devices){
-        		
-        		DeviceId id = device.id();
-        		String dpid = id.toString().substring(DPID_BEGIN);
-        		DriverHandler handler = driverService.createHandler(id);
-                BridgeConfig bridgeConfig =  handler.behaviour(BridgeConfig.class);
-                Collection<BridgeDescription> bridges = bridgeConfig.getBridges();
-                
-                final String name = ovs;
-                long count = bridges.stream()
-                	     .filter( bd -> bd.bridgeName().name().equals(name))
-                	     .count();
-                
-                if(count > 1){
-                	log.info("MAGIC brige is alredy exist.");
-                }
-                
-                
-                List<ControllerInfo> controllers = new ArrayList<>();
-                Sets.newHashSet(clusterService.getNodes()).stream()
-                        .forEach(controller -> {
-                            ControllerInfo ctrlInfo = new ControllerInfo(controller.ip(), OFPORT, "tcp");
-                            controllers.add(ctrlInfo);
-                        });
-                controllers.forEach(action -> log.info("Controller info:{}", action.toString()));
-                bridgeConfig.addBridge(BridgeName.bridgeName(ovs), dpid, controllers);
-                log.info("MAGIC brige is created.");
-        	}
-        } catch (ItemNotFoundException e) {
-            log.warn("Create magic bridge failed.");
-        }
-    }
-    
+	/***
+	 * DPID Prefix.
+	 */
+	private static final int DPID_BEGIN = 3;
 
-    /**
-     * Returns connection state of OVSDB server for a given node.
-     *
-     * @param node cordvtn node
-     * @return true if it is connected, false otherwise
-     */
-//    private boolean isOvsdbConnected(OvsNode node) {
-//        checkNotNull(node);
-//
-//        OvsdbClientService ovsdbClient = getOvsdbClient(node);
-//        return deviceService.isAvailable(node.ovsdbId()) &&
-//                ovsdbClient != null && ovsdbClient.isConnected();
-//    }
-    
-    /**
-     * Returns OVSDB client for a given node.
-     *
-     * @param node cordvtn node
-     * @return OVSDB client, or null if it fails to get OVSDB client
-     */
-//    private OvsdbClientService getOvsdbClient(OvsNode node) {
-//        checkNotNull(node);
-//
-//        OvsdbClientService ovsdbClient = controller.getOvsdbClient(
-//                new OvsdbNodeId(node.hostMgmtIp().ip(), node.ovsdbPort().toInt()));
-//        if (ovsdbClient == null) {
-//            log.trace("Couldn't find OVSDB client for {}", node.hostname());
-//        }
-//        return ovsdbClient;
-//    }
+	/**
+	 * OF port.
+	 */
+	private static final int OFPORT = 6653;
 
+	/**
+	 * APP Name.
+	 */
+	public static final String APP_ID = "org.bootcamp.magic";
 
-    /**
-     * Connects to OVSDB server for a given node.
-     *
-     * @param node cordvtn node
-     */
-//    private void connectOvsdb(OvsNode node) {
-//        checkNotNull(node);
-//
-//        if (!nodeStore.containsKey(node.hostname())) {
-//            log.warn("Node {} does not exist", node.hostname());
-//            return;
-//        }
-//
-//        if (!isOvsdbConnected(node)) {
-//            controller.connect(node.hostMgmtIp().ip(), node.ovsdbPort());
-//        }
-//    }
+	/**
+	 * Bridge Name.
+	 */
+	public static final String MAGIC_BRIDGE = "magic";
 
-    
-    private class OvsdbHandler implements ConnectionHandler<Device> {
+	@Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+	protected DriverService driverService;
 
-        @Override
-        public void connected(Device device) {
-        }
+	@Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+	protected DeviceService deviceService;
 
-        @Override
-        public void disconnected(Device device) {
-            if (!deviceService.isAvailable(device.id())) {
-                log.debug("Device {} is disconnected", device.id());
-                adminService.removeDevice(device.id());
-            }
-        }
-    }
+	@Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+	protected FlowRuleService flowRuleService;
 
-    private class BridgeHandler implements ConnectionHandler<Device> {
+	@Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+	protected ClusterService clusterService;
 
-        @Override
-        public void connected(Device device) {
-        }
+	@Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+	protected CoreService coreService;
 
-        @Override
-        public void disconnected(Device device) {
-        }
-    }
-    
+	private FlowRuleInstaller ruleInstaller;
+
+	/**
+	 * Application Id.
+	 */
+	private ApplicationId appId;
+
+	/**
+	 * CLI admin service.
+	 */
+	@Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+	protected DeviceAdminService adminService;
+
+	@Activate
+	protected void activate() {
+		appId = coreService.registerApplication(APP_ID);
+		ruleInstaller = new FlowRuleInstaller(appId, deviceService, flowRuleService);
+		deviceService.addListener(ruleInstaller);
+		log.info("Magic bridge started.");
+	}
+
+	@Deactivate
+	protected void deactivate() {
+		deviceService.removeListener(ruleInstaller);
+		log.info("Magic bridge stopped.");
+	}
+
+	/**
+	 * Creates an magic bridge for a given node.
+	 *
+	 * @param node
+	 *            virtual switch node
+	 */
+	public void createMagicBridge(String ovs) {
+		log.info("Create Step 1:");
+		if (ovs == null || ovs.isEmpty()) {
+			ovs = MAGIC_BRIDGE;
+			log.info("Create Step 2:");
+		}
+
+		Iterable<Device> devices = deviceService.getAvailableDevices(Type.CONTROLLER);
+
+		for (Device device : devices) {
+			log.info("Create Step 3:");
+			DeviceId id = device.id();
+			String dpid = id.toString().substring(DPID_BEGIN);
+			DriverHandler handler = driverService.createHandler(id);
+			log.info("Create Step 4:id={}, dpid={}", id, dpid);
+			BridgeConfig bridgeConfig = handler.behaviour(BridgeConfig.class);
+			log.info("Get bridge config: bridgeconfig is null?:{}", bridgeConfig==null);
+			Collection<BridgeDescription> bridges = null;
+			try {
+				bridges = bridgeConfig.getBridges();
+			} catch (Exception e) {
+				log.error("exception", e);
+				continue;
+			}
+			
+			log.info("BridgeConfig is null?:{}", bridges==null);
+			if(bridges == null || bridges.isEmpty()){
+				log.info("Here Bridge is empty.");
+				continue;
+			}
+
+			final String name = ovs;
+			long count = bridges.stream().filter(bd -> bd.bridgeName().name().equals(name)).count();
+
+			if (count > 1) {
+				log.info("MAGIC brige is alredy exist.");
+				return;
+			}
+
+			try {
+				List<ControllerInfo> controllers = new ArrayList<>();
+				Sets.newHashSet(clusterService.getNodes()).stream().forEach(controller -> {
+					ControllerInfo ctrlInfo = new ControllerInfo(controller.ip(), OFPORT, "ptcp");
+					controllers.add(ctrlInfo);
+				});
+				log.info("Create Step 6:");
+//				controllers.forEach(action -> log.info("Controller info:{}", action.toString()));
+				bridgeConfig.addBridge(BridgeName.bridgeName(ovs), dpid, controllers);
+				log.info("MAGIC brige is created.");
+			} catch (ItemNotFoundException e) {
+				log.warn("Create magic bridge .....");
+			}
+		}
+
+	}
 }
